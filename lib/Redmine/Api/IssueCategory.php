@@ -51,7 +51,7 @@ class IssueCategory extends AbstractApi
      *
      * @param  string|int $project project id or literal identifier
      * @param  string     $name
-     * @return int
+     * @return int|false
      */
     public function getIdByName($project, $name)
     {
@@ -140,6 +140,6 @@ class IssueCategory extends AbstractApi
      */
     public function remove($id, array $params = array())
     {
-        return $this->delete('/issue_categories/'.$id.'.xml?'.$this->http_build_str($params));
+        return $this->delete('/issue_categories/'.$id.'.xml?'.http_build_query($params));
     }
 }

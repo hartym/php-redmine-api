@@ -35,7 +35,7 @@ class Issue extends AbstractApi
      */
     public function all(array $params = array())
     {
-        return $this->get('/issues.json?'.$this->http_build_str($params));
+        return $this->get('/issues.json?'.http_build_query($params));
     }
 
     /**
@@ -50,7 +50,7 @@ class Issue extends AbstractApi
      */
     public function show($id, array $params = array())
     {
-        return $this->get('/issues/'.urlencode($id).'.json?'.$this->http_build_str($params));
+        return $this->get('/issues/'.urlencode($id).'.json?'.http_build_query($params));
     }
 
     /**
@@ -70,6 +70,15 @@ class Issue extends AbstractApi
                     $item = $custom_fields_item->addChild('custom_field', '');
                     $item->addAttribute('id', (int) $field['id']);
                     $item->addChild('value', $field['value']);
+                }
+            } elseif ('uploads' === $k && is_array($v)) {
+                $uploads_item = $xml->addChild('uploads', '');
+                $uploads_item->addAttribute('type', 'array');
+                foreach ($v as $upload) {
+                    $upload_item = $uploads_item->addChild('upload', '');
+                    foreach ($upload as $upload_k => $upload_v) {
+                      $upload_item->addChild($upload_k, $upload_v);
+                    }
                 }
             } else {
                 $item = $xml->addChild($k, $v);

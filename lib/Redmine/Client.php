@@ -38,9 +38,27 @@ class Client
     private $checkSslCertificate = false;
 
     /**
+     *
+     * Flag to determine authentication method
+     *
+     * @var boolean
+     */
+    private $useHttpAuth = true;
+
+    /**
      * @var array APIs
      */
     private $apis = array();
+
+    /**
+     * Error strings if json is invalid
+     */
+    private static $json_errors = array(
+        JSON_ERROR_NONE => 'No error has occurred',
+        JSON_ERROR_DEPTH => 'The maximum stack depth has been exceeded',
+        JSON_ERROR_CTRL_CHAR => 'Control character error, possibly incorrectly encoded',
+        JSON_ERROR_SYNTAX => 'Syntax error',
+    );
 
     /**
      * @param string $url
@@ -158,7 +176,25 @@ class Client
             return false;
         }
 
-        return json_decode($json, true);
+        return $this->decode($json);
+    }
+
+    /**
+     * Decodes json response
+     * @param  string $json
+     * @return array
+     */
+    public function decode($json)
+    {
+        $decoded = json_decode($json, true);
+        if (null !== $decoded) {
+            return $decoded;
+        }
+        if (JSON_ERROR_NONE === json_last_error()) {
+            return $json;
+        }
+
+        return self::$json_errors[json_last_error()];
     }
 
     /**
@@ -203,6 +239,15 @@ class Client
     }
 
     /**
+     * Turns on/off http auth
+     * @param boolean $check
+     */
+    public function setUseHttpAuth($use = true)
+    {
+        $this->useHttpAuth = $use;
+    }
+
+    /**
      * Set the port of the connection
      * @param int $port
      */
@@ -218,7 +263,7 @@ class Client
      * if not set, it will try to guess the port
      * from the given $urlPath
      * @param  string $urlPath the url called
-     * @return int
+     * @return int    the port number
      */
     public function getPort($urlPath = null)
     {
@@ -252,7 +297,7 @@ class Client
         $this->getPort($this->url.$path);
 
         $curl = curl_init();
-        if (isset($this->apikey)) {
+        if (isset($this->apikey) && $this->useHttpAuth) {
             curl_setopt($curl, CURLOPT_USERPWD, $this->apikey.':'.rand(100000, 199999) );
             curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
         }
@@ -269,17 +314,20 @@ class Client
         if ('xml' === substr($tmp['path'], -3)) {
             curl_setopt($curl, CURLOPT_HTTPHEADER, array(
                 'Content-Type: text/xml',
+                'X-Redmine-API-Key: '.$this->apikey
             ));
         }
         if ('json' === substr($tmp['path'], -4)) {
             curl_setopt($curl, CURLOPT_HTTPHEADER, array(
                 'Content-Type: application/json',
+                'X-Redmine-API-Key: '.$this->apikey
             ));
         }
 
         if ('/uploads.json' === $path || '/uploads.xml' === $path) {
             curl_setopt($curl, CURLOPT_HTTPHEADER, array(
                 'Content-Type: application/octet-stream',
+                'X-Redmine-API-Key: '.$this->apikey
             ));
         }
 
