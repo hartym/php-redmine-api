@@ -21,7 +21,7 @@ class User extends AbstractApi
      */
     public function all(array $params = array())
     {
-        $this->users = $this->get('/users.json?'.$this->http_build_str($params));
+        $this->users = $this->get('/users.json?'.http_build_query($params));
 
         return $this->users;
     }
@@ -38,8 +38,10 @@ class User extends AbstractApi
             $this->all();
         }
         $ret = array();
-        foreach ($this->users['users'] as $e) {
-            $ret[$e['login']] = (int) $e['id'];
+        if (is_array($this->users) && isset($this->users['users'])) {
+            foreach ($this->users['users'] as $e) {
+                $ret[$e['login']] = (int) $e['id'];
+            }
         }
 
         return $ret;
